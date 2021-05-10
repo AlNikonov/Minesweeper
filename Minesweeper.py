@@ -1,7 +1,8 @@
 import tkinter as tk
 from random import randint
 
-# from datetime import datetime
+from datetime import datetime
+
 # from PIL import Image, ImageTk
 
 NUM_COLORS = {
@@ -33,7 +34,31 @@ class NewButton(tk.Button):
         return f'Button{self.row}{self.column} {self.is_bomb}'
 
 
+class Timer:
+
+    def __init__(self):
+        self.counter = 0
+        self.after_id = ''
+        self.timer = tk.Label(master=MineSweeper.frm, bg='#99ccff', font='Times 30')
+        self.timer.grid(row=10, columnspan=10, sticky='nsew')
+
+    def tick(self):
+        self.after_id = MineSweeper.window.after(1000, self.tick)
+        formatted_time = datetime.fromtimestamp(self.counter).strftime('%M:%S')
+        self.timer.configure(text=formatted_time)
+        self.counter += 1
+
+    def start_timer(self):
+        self.tick()
+
+    def stop_timer(self):
+        MineSweeper.window.after_cancel(self.after_id)
+        self.counter = 0
+        self.after_id = ''
+
+
 class MineSweeper:
+    timer = None
     buttons = None
     bombs = None
     window = tk.Tk()
@@ -50,7 +75,6 @@ class MineSweeper:
         frm.grid_columnconfigure(index=column, minsize=55)
 
     def __init__(self):
-        # Заменить Minesweeper.bombs на self.bombs
         MineSweeper.bombs = [[0 for _ in range(MineSweeper.COLUMN)] for _ in range(MineSweeper.ROW)]
         counter = 0
         while counter != MineSweeper.BOMBS:
@@ -93,6 +117,8 @@ class MineSweeper:
                 btn = NewButton(master=MineSweeper.frm, width=6, height=3, bg='#99ccff', row=i, column=j)
                 row_btn.append(btn)
             MineSweeper.buttons.append(row_btn)
+        MineSweeper.timer = Timer()
+        MineSweeper.timer.start_timer()
 
     # Обработка нажатия левой кнопкой мыши
     @staticmethod
@@ -109,6 +135,7 @@ class MineSweeper:
             else:
                 MineSweeper.null_button(i, j)
 
+    # Обработка нажатия правой кнопкой мыши
     @staticmethod
     def rmb_click(event, i, j):
         btn = MineSweeper.buttons[i][j]
@@ -124,6 +151,7 @@ class MineSweeper:
     # Обработка нажатия на кнопку с бомбой
     @staticmethod
     def detonate():
+        MineSweeper.timer.stop_timer()
         MineSweeper.frm.destroy()
         MineSweeper.window.title('Вы проиграли', )
         label = tk.Label(master=MineSweeper.window, text='Вы проиграли', font='Times 30',
